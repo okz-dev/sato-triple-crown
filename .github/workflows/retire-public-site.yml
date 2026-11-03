@@ -1,0 +1,49 @@
+name: Retire public site
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/retire-public-site.yml'
+
+concurrency:
+  group: sato-stats-and-pages
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  retire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+    steps:
+      - name: Prepare withdrawn public content
+        shell: bash
+        run: |
+          mkdir -p retired-public
+          touch retired-public/.nojekyll
+          cat > retired-public/404.html <<'HTML'
+          <!doctype html>
+          <html lang="ja">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <meta name="robots" content="noindex,nofollow">
+            <title>公開終了</title>
+          </head>
+          <body>
+            <h1>このサイトの公開は終了しました。</h1>
+          </body>
+          </html>
+          HTML
+      - name: Upload replacement without site files
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: retired-public
+      - name: Replace public deployment
+        uses: actions/deploy-pages@v4
